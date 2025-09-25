@@ -1,0 +1,12 @@
+com\matrimony\model\User.class
+com\matrimony\BackendApplication.class
+com\matrimony\controller\AuthController.class
+com\matrimony\service\UserService.class
+com\matrimony\model\User$Role.class
+com\matrimony\model\Profile.class
+com\matrimony\repository\ProfileRepository.class
+com\matrimony\security\JwtUtil.class
+com\matrimony\controller\ProfileController.class
+com\matrimony\service\ProfileService.class
+com\matrimony\model\User$Status.class
+com\matrimony\repository\UserRepository.class
