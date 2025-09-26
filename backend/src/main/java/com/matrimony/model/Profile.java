@@ -12,9 +12,15 @@ public class Profile {
     @JoinColumn(name = "user_id", unique = true)
     private User user;
 
+    @Column(nullable = false)
     private String fullName;
+
+    @Column(nullable = false)
     private String gender;
+
+    @Column(nullable = false)
     private Integer age;
+
     private String location;
     private String religion;
     private String caste;

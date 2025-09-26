@@ -11,8 +11,8 @@ export default function Select({ label, options = [], className = "", ...props }
         {...props}
       >
         {options.map((opt, idx) => (
-          <option key={idx} value={opt.value || opt}>
-            {opt.label || opt}
+          <option key={idx} value={opt.value ?? opt}>
+            {opt.label ?? opt}
           </option>
         ))}
       </select>

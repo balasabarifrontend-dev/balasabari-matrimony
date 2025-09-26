@@ -39,8 +39,22 @@ export default function RegisterForm() {
     e.preventDefault();
     setLoading(true);
 
+    // Map frontend fields to backend fields
+    const payload = {
+      fullName: form.name,
+      gender: form.gender,
+      age: form.dob ? new Date().getFullYear() - new Date(form.dob).getFullYear() : "",
+      email: form.email,
+      mobile: form.phone,
+      password: form.password,
+      religion: form.religion,
+      caste: form.caste,
+      location: [form.city, form.state, form.country].filter(Boolean).join(", "),
+      // You can add other fields if your backend supports them
+    };
+
     try {
-      await axios.post(import.meta.env.VITE_API_URL + "/auth/register", form);
+      await axios.post(import.meta.env.VITE_API_URL + "/api/auth", payload);
       alert("Registered successfully!");
       window.location.href = "/login";
     } catch (err) {

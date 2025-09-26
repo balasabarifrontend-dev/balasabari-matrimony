@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 
 // Layout
 import Navbar from "./components/common/Navbar";
+import Banner from "./components/common/Banner";
 import Footer from "./components/common/Footer";
 
 // Pages
@@ -13,11 +14,18 @@ import SearchPage from "./pages/SearchPage";
 import UpgradePage from "./pages/UpgradePage";
 import ServicesPage from "./pages/ServicesPage";
 import Contact from "./pages/Contact";
+
 import "./index.css"; // Tailwind CSS
 
 export default function App() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* ✅ Navbar always visible */}
+      <Navbar />
+
+      {/* ✅ Banner always visible */}
+      <Banner />
+
       {/* ✅ Page Content */}
       <main className="flex-grow">
         <Routes>
@@ -44,6 +52,9 @@ export default function App() {
           />
         </Routes>
       </main>
+
+      {/* ✅ Footer always visible */}
+      <Footer />
     </div>
   );
 }

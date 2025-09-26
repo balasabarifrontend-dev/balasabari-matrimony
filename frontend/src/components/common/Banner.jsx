@@ -1,9 +1,11 @@
-// src/components/common/Banner.jsx
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import BannerImage from "../../assets/BannerImage.jpg"; 
 import Button from "../ui/Button";
 
 export default function Banner() {
+  const navigate = useNavigate();
+
   return (
     <section className="relative w-full h-[450px] md:h-[550px] overflow-hidden">
       {/* Background Image */}
@@ -29,6 +31,7 @@ export default function Banner() {
             variant="primary"
             size="lg"
             className="font-bold text-lg"
+            onClick={() => navigate("/register")}
           >
             Get Started
           </Button>

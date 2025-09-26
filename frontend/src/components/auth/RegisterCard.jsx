@@ -1,4 +1,3 @@
-// src/components/common/RegisterCard.jsx
 import React, { useState } from "react";
 import axios from "axios";
 import Input from "../ui/Input";
@@ -15,11 +14,21 @@ export default function RegisterCard() {
     e.preventDefault();
     setLoading(true);
 
+    // Map frontend fields to backend fields
+    const payload = {
+      fullName: form.name,
+      email: form.email,
+      password: form.password,
+      gender: "Male", // 👈 default gender for quick card
+      mobile: "",     // backend expects mobile, leave blank or add input if needed
+      age: "",        // backend expects age, leave blank or add input if needed
+      religion: "",
+      caste: "",
+      location: "",
+    };
+
     try {
-      await axios.post(import.meta.env.VITE_API_URL + "/auth/register", {
-        ...form,
-        gender: "Male", // 👈 default gender for quick card
-      });
+      await axios.post(import.meta.env.VITE_API_URL + "/auth/register", payload);
 
       alert("Registered successfully!");
       window.location.href = "/login"; // redirect to login

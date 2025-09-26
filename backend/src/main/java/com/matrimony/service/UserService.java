@@ -20,5 +20,12 @@ public class UserService {
     return userRepository.save(user);
   }
 
-  public Optional<User> findByEmail(String email){ return userRepository.findByEmail(email); }
+  public Optional<User> findByEmail(String email){ 
+    return userRepository.findByEmail(email); 
+  }
+
+  // Add this method for password checking (used in AuthController)
+  public boolean checkPassword(User user, String rawPassword) {
+    return encoder.matches(rawPassword, user.getPassword());
+  }
 }

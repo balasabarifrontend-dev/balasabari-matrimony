@@ -1,4 +1,3 @@
-// src/components/auth/LoginForm.jsx
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
@@ -23,9 +22,12 @@ export default function LoginForm() {
         form
       );
 
-      if (res.status === 200) {
+      if (res.status === 200 && res.data.token) {
+        localStorage.setItem("token", res.data.token); // Store JWT token
         alert("Login successful!");
-        navigate("/"); // ✅ redirect to homepage
+        navigate("/"); // redirect to homepage
+      } else {
+        alert("Login failed. Try again!");
       }
     } catch (err) {
       console.error("Login error:", err);

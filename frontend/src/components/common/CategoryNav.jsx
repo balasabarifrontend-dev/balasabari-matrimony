@@ -1,8 +1,7 @@
-// src/components/common/CategoryNav.jsx
 import React from "react";
 import Button from "../ui/Button";
 
-export default function CategoryNav() {
+export default function CategoryNav({ onSelect }) {
   const categories = [
     "Vanniyar",
     "Gounder",
@@ -26,6 +25,7 @@ export default function CategoryNav() {
             key={idx}
             variant="ghost"
             className="whitespace-nowrap shadow-sm text-sm"
+            onClick={() => onSelect && onSelect(cat)}
           >
             {cat}
           </Button>
