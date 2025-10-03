@@ -22,15 +22,15 @@ export default function Banner() {
       <div className="relative z-20 flex items-center justify-center h-full text-center px-6">
         <div className="max-w-3xl">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-white drop-shadow-lg leading-snug">
-            உங்களுக்குப் பொருத்தமான தமிழ்ப் பொருத்தத்தைக் கண்டறியவும்
+            Find the right match for you
           </h2>
           <p className="text-lg md:text-xl mb-6 text-gray-200 drop-shadow">
-            உலகளவில் ஆயிரக்கணக்கான தமிழ் குடும்பங்களால் நம்பப்படுகிறது.
+            Trusted by thousands of Tamil families worldwide.
           </p>
           <Button
             variant="primary"
             size="lg"
-            className="font-bold text-lg"
+            className="font-bold text-lg bg-yellow-400 hover:bg-red-600"
             onClick={() => navigate("/register")}
           >
             Get Started

@@ -1,20 +1,22 @@
 package com.matrimony.controller;
 
-import org.springframework.web.bind.annotation.*;
+import com.matrimony.dto.ServiceDto;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/services")
 @CrossOrigin(origins = "http://localhost:5173")
 public class ServiceController {
+
     @GetMapping
-    public ResponseEntity<List<Map<String, Object>>> getServices() {
-        List<Map<String, Object>> services = List.of(
-            Map.of("id", 1, "title", "Profile Matching", "description", "Get the best matches based on your preferences."),
-            Map.of("id", 2, "title", "Secure Messaging", "description", "Chat safely with verified members."),
-            Map.of("id", 3, "title", "24/7 Support", "description", "Our support team is here to help anytime.")
+    public ResponseEntity<List<ServiceDto>> getServices() {
+        List<ServiceDto> services = List.of(
+                new ServiceDto(1L, "Profile Matching", "Get the best matches based on your preferences."),
+                new ServiceDto(2L, "Secure Messaging", "Chat safely with verified members."),
+                new ServiceDto(3L, "24/7 Support", "Our support team is here to help anytime.")
         );
         return ResponseEntity.ok(services);
     }

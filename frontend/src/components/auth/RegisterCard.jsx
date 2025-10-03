@@ -45,7 +45,7 @@ export default function RegisterCard() {
   return (
     <div className="bg-white shadow-lg rounded-xl p-6">
       <h3 className="text-lg font-semibold mb-4 text-red-600">
-        Register Free
+        Login To Get Started
       </h3>
       <form onSubmit={handleSubmit} className="space-y-3">
         <Input
@@ -73,7 +73,7 @@ export default function RegisterCard() {
           required
         />
         <Button type="submit" variant="primary" fullWidth disabled={loading}>
-          {loading ? "Registering..." : "Register Now"}
+          {loading ? "Registering..." : "Login Now"}
         </Button>
       </form>
     </div>

@@ -1,50 +1,83 @@
 package com.matrimony.service;
+
+import com.matrimony.dto.ProfileDto;
 import com.matrimony.model.Profile;
+import com.matrimony.model.User;
 import com.matrimony.repository.ProfileRepository;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class ProfileService {
-  private final ProfileRepository repo;
-  public ProfileService(ProfileRepository repo){ this.repo = repo; }
 
-  public Profile save(Profile p){ return repo.save(p); }
-  public List<Profile> findAll(){ return repo.findAll(); }
+    private final ProfileRepository profileRepository;
 
-  public Optional<Profile> findById(Long id) {
-    return repo.findById(id);
-  }
-
-  public Optional<Profile> update(Long id, Profile updatedProfile) {
-    return repo.findById(id).map(profile -> {
-      profile.setFullName(updatedProfile.getFullName());
-      profile.setGender(updatedProfile.getGender());
-      profile.setAge(updatedProfile.getAge());
-      profile.setLocation(updatedProfile.getLocation());
-      profile.setReligion(updatedProfile.getReligion());
-      profile.setCaste(updatedProfile.getCaste());
-      // Add other fields as needed
-      return repo.save(profile);
-    });
-  }
-
-  public boolean delete(Long id) {
-    if (repo.existsById(id)) {
-      repo.deleteById(id);
-      return true;
+    public ProfileService(ProfileRepository profileRepository) {
+        this.profileRepository = profileRepository;
     }
-    return false;
-  }
 
-  public List<Profile> search(String gender, Integer minAge, Integer maxAge, String location) {
-    return repo.findAll().stream()
-      .filter(p -> gender == null || p.getGender().equalsIgnoreCase(gender))
-      .filter(p -> minAge == null || p.getAge() >= minAge)
-      .filter(p -> maxAge == null || p.getAge() <= maxAge)
-      .filter(p -> location == null || p.getLocation().equalsIgnoreCase(location))
-      .collect(Collectors.toList());
-  }
+    public ProfileDto save(ProfileDto dto, User user) {
+        Profile profile = new Profile();
+        profile.setUser(user);
+        profile.setFullName(dto.getFullName());
+        profile.setGender(dto.getGender());
+        profile.setAge(dto.getAge());
+        profile.setLocation(dto.getLocation());
+        profile.setReligion(dto.getReligion());
+        profile.setCaste(dto.getCaste());
+
+        Profile saved = profileRepository.save(profile);
+        return mapToDto(saved);
+    }
+
+    public Optional<ProfileDto> update(Long id, ProfileDto dto, User user) {
+        return profileRepository.findById(id).map(profile -> {
+            if (!profile.getUser().getId().equals(user.getId())) return null;
+            profile.setFullName(dto.getFullName());
+            profile.setGender(dto.getGender());
+            profile.setAge(dto.getAge());
+            profile.setLocation(dto.getLocation());
+            profile.setReligion(dto.getReligion());
+            profile.setCaste(dto.getCaste());
+            return mapToDto(profileRepository.save(profile));
+        });
+    }
+
+    public boolean delete(Long id) {
+        if (profileRepository.existsById(id)) {
+            profileRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+
+    public Optional<ProfileDto> findById(Long id) {
+        return profileRepository.findById(id).map(this::mapToDto);
+    }
+
+    public List<ProfileDto> search(String gender, Integer minAge, Integer maxAge, String location) {
+        return profileRepository.findAll().stream()
+                .filter(p -> (gender == null || p.getGender().equalsIgnoreCase(gender)) &&
+                             (minAge == null || p.getAge() >= minAge) &&
+                             (maxAge == null || p.getAge() <= maxAge) &&
+                             (location == null || (p.getLocation() != null && p.getLocation().equalsIgnoreCase(location))))
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    public ProfileDto mapToDto(Profile profile) {
+        return new ProfileDto(
+                profile.getId(),
+                profile.getFullName(),
+                profile.getGender(),
+                profile.getAge(),
+                profile.getLocation(),
+                profile.getReligion(),
+                profile.getCaste(),
+                profile.getUser().getId()
+        );
+    }
 }

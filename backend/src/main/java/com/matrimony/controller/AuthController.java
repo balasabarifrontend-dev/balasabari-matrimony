@@ -1,10 +1,13 @@
 package com.matrimony.controller;
 
+import com.matrimony.dto.UserDto;
 import com.matrimony.model.User;
-import com.matrimony.service.UserService;
 import com.matrimony.security.JwtUtil;
+import com.matrimony.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Map;
 import java.util.Optional;
 
@@ -12,6 +15,7 @@ import java.util.Optional;
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "http://localhost:5173")
 public class AuthController {
+
     private final UserService userService;
     private final JwtUtil jwtUtil;
 
@@ -20,21 +24,25 @@ public class AuthController {
         this.jwtUtil = jwtUtil;
     }
 
+    // --- Register ---
     @PostMapping("/register")
-    public ResponseEntity<User> register(@RequestBody User user) {
-        User saved = userService.register(user);
+    public ResponseEntity<UserDto> register(@Valid @RequestBody UserDto userDto) {
+        UserDto saved = userService.register(userDto);
         return ResponseEntity.ok(saved);
     }
 
+    // --- Login ---
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> payload) {
         String email = payload.get("email");
         String password = payload.get("password");
+
         Optional<User> userOpt = userService.findByEmail(email);
         if (userOpt.isPresent() && userService.checkPassword(userOpt.get(), password)) {
             String token = jwtUtil.generateToken(email);
-            return ResponseEntity.ok(Map.of("token", token, "user", userOpt.get()));
+            UserDto dto = userService.mapToDto(userOpt.get());
+            return ResponseEntity.ok(Map.of("token", token, "user", dto));
         }
-        return ResponseEntity.status(401).body("Invalid credentials");
+        return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
     }
 }

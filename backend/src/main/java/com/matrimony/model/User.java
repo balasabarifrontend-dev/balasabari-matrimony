@@ -1,4 +1,6 @@
 package com.matrimony.model;
+
+
 import jakarta.persistence.*;
 
 @Entity

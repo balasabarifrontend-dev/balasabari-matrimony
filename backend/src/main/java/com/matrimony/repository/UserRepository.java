@@ -1,4 +1,5 @@
 package com.matrimony.repository;
+
 import com.matrimony.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;

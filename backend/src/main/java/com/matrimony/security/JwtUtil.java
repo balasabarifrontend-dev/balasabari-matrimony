@@ -1,41 +1,34 @@
 package com.matrimony.security;
 
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.stereotype.Component;
-
-import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtUtil {
-    private final String SECRET = "your-very-long-secret-key-for-jwt-signing-should-be-256-bits";
-    private final Key key = Keys.hmacShaKeyFor(SECRET.getBytes());
 
-    public String generateToken(String subject) {
+    private final String secret = "mySecretKey";
+
+    public String generateToken(String username) {
         return Jwts.builder()
-                .setSubject(subject)
+                .setSubject(username)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000)) // 1 day
-                .signWith(key, SignatureAlgorithm.HS256)
+                .setExpiration(new Date(System.currentTimeMillis() + 1000*60*60*10))
+                .signWith(SignatureAlgorithm.HS256, secret)
                 .compact();
     }
 
     public String extractUsername(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+        return getClaims(token).getSubject();
     }
 
     public boolean validateToken(String token) {
-        try {
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
-            return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            return false;
-        }
+        return !getClaims(token).getExpiration().before(new Date());
+    }
+
+    private Claims getClaims(String token) {
+        return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody();
     }
 }
