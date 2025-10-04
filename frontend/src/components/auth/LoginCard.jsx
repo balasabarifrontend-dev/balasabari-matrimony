@@ -3,8 +3,8 @@ import axios from "axios";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
 
-export default function RegisterCard() {
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+export default function LoginCard({ onRegister }) {
+  const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) =>
@@ -14,29 +14,20 @@ export default function RegisterCard() {
     e.preventDefault();
     setLoading(true);
 
-    // Map frontend fields to backend fields
-    const payload = {
-      fullName: form.name,
-      email: form.email,
-      password: form.password,
-      gender: "Male", // 👈 default gender for quick card
-      mobile: "",     // backend expects mobile, leave blank or add input if needed
-      age: "",        // backend expects age, leave blank or add input if needed
-      religion: "",
-      caste: "",
-      location: "",
-    };
-
     try {
-      await axios.post(import.meta.env.VITE_API_URL + "/auth/register", payload);
+      const res = await axios.post(import.meta.env.VITE_API_URL + "/auth/login", form);
 
-      alert("Registered successfully!");
-      window.location.href = "/login"; // redirect to login
+      // Successful login
+      alert("Login successful!");
+      localStorage.setItem("userRegistered", "true");
+      window.location.href = "/dashboard"; // redirect after login
     } catch (err) {
-      console.error("RegisterCard error:", err);
-      alert(
-        err.response?.data?.error || "Registration failed. Please try again."
-      );
+      if (err.response?.status === 404) {
+        alert("User not found! Please register.");
+        onRegister(); // open register modal
+      } else {
+        alert(err.response?.data?.error || "Login failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -48,14 +39,6 @@ export default function RegisterCard() {
         Login To Get Started
       </h3>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <Input
-          type="text"
-          name="name"
-          value={form.name}
-          onChange={handleChange}
-          placeholder="Full Name"
-          required
-        />
         <Input
           type="email"
           name="email"
@@ -73,9 +56,18 @@ export default function RegisterCard() {
           required
         />
         <Button type="submit" variant="primary" fullWidth disabled={loading}>
-          {loading ? "Registering..." : "Login Now"}
+          {loading ? "Logging in..." : "Login Now"}
         </Button>
       </form>
+      <p className="mt-3 text-sm text-gray-600">
+        Not registered?{" "}
+        <button
+          onClick={onRegister}
+          className="text-red-600 font-semibold hover:underline"
+        >
+          Register here
+        </button>
+      </p>
     </div>
   );
 }

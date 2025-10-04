@@ -1,18 +1,49 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
-import BannerImage from "../../assets/BannerImage.jpg"; 
+import React, { useState, useEffect } from "react";
 import Button from "../ui/Button";
 
-export default function Banner() {
-  const navigate = useNavigate();
+import BannerImage1 from "../../assets/BannerImage1.jpg";
+import BannerImage2 from "../../assets/BannerImage2.png";
+import BannerImage3 from "../../assets/BannerImage3.jpg";
+import BannerImage4 from "../../assets/BannerImage4.jpg";
+
+const bannerImages = [BannerImage1, BannerImage2, BannerImage3, BannerImage4];
+
+export default function Banner({ selectedMenu, onGetStarted }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [fade, setFade] = useState(true);
+
+  useEffect(() => {
+    if (selectedMenu != null) {
+      setFade(false);
+      setTimeout(() => {
+        setCurrentIndex(selectedMenu % bannerImages.length);
+        setFade(true);
+      }, 300);
+    }
+  }, [selectedMenu]);
+
+  useEffect(() => {
+    if (selectedMenu == null) {
+      const interval = setInterval(() => {
+        setFade(false);
+        setTimeout(() => {
+          setCurrentIndex((prev) => (prev + 1) % bannerImages.length);
+          setFade(true);
+        }, 300);
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedMenu]);
 
   return (
     <section className="relative w-full h-[450px] md:h-[550px] overflow-hidden">
-      {/* Background Image */}
+      {/* Background Image with smooth transition */}
       <img
-        src={BannerImage}
+        src={bannerImages[currentIndex]}
         alt="Tamil Matrimony Banner"
-        className="absolute inset-0 w-full h-full object-cover z-0"
+        className={`absolute inset-0 w-full h-full object-cover z-0 transform transition-all duration-700 ease-in-out ${
+          fade ? "opacity-100 translate-x-0" : "opacity-0 translate-x-5"
+        }`}
       />
 
       {/* Overlay Gradient */}
@@ -31,7 +62,7 @@ export default function Banner() {
             variant="primary"
             size="lg"
             className="font-bold text-lg bg-yellow-400 hover:bg-red-600"
-            onClick={() => navigate("/register")}
+            onClick={onGetStarted}
           >
             Get Started
           </Button>

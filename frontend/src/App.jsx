@@ -1,10 +1,12 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
 
-// Layout
 import Navbar from "./components/common/Navbar";
 import Banner from "./components/common/Banner";
 import Footer from "./components/common/Footer";
+import LoginForm from "./components/auth/LoginForm";
+import RegisterForm from "./components/auth/RegisterForm";
+import MainLayout from "./layout/MainLayout";
 
 // Pages
 import HomePage from "./pages/Home";
@@ -14,34 +16,102 @@ import SearchPage from "./pages/SearchPage";
 import UpgradePage from "./pages/UpgradePage";
 import ServicesPage from "./pages/ServicesPage";
 import Contact from "./pages/Contact";
+import AdminDashboard from "./pages/AdminDashBoard";
 
-import "./index.css"; // Tailwind CSS
+import "./index.css";
 
 export default function App() {
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [user, setUser] = useState(null); // store logged-in user info
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Load user from localStorage on app start
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) setUser(JSON.parse(storedUser));
+  }, []);
+
+  const handleLoginSuccess = (userData) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+    setShowLogin(false);
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem("user");
+    navigate("/");
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* ✅ Navbar always visible */}
-      <Navbar />
+      {/* Navbar */}
+      <Navbar
+        user={user}
+        onLogin={() => setShowLogin(true)}
+        onRegister={() => setShowRegister(true)}
+        onLogout={handleLogout}
+      />
 
-      {/* ✅ Banner always visible */}
-      <Banner />
+      {/* Banner */}
+      <Banner onGetStarted={() => setShowRegister(true)} />
 
-      {/* ✅ Page Content */}
+      {/* Page Content */}
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<HomePage />} />
 
-          {/* Auth */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route
+            path="/search"
+            element={
+              <MainLayout onLogin={() => setShowLogin(true)} onRegister={() => setShowRegister(true)}>
+                <SearchPage />
+              </MainLayout>
+            }
+          />
 
-          {/* Other Pages */}
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/upgrade" element={<UpgradePage />} />
-          <Route path="/services" element={<ServicesPage />} />
+          <Route
+            path="/upgrade"
+            element={
+              <MainLayout onLogin={() => setShowLogin(true)} onRegister={() => setShowRegister(true)}>
+                <UpgradePage />
+              </MainLayout>
+            }
+          />
+
+          <Route
+            path="/services"
+            element={
+              <MainLayout onLogin={() => setShowLogin(true)} onRegister={() => setShowRegister(true)}>
+                <ServicesPage />
+              </MainLayout>
+            }
+          />
+
           <Route path="/contact" element={<Contact />} />
 
-          {/* Fallback */}
+          {/* Auth */}
+          <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
+          <Route path="/register" element={<RegisterPage onRegisterSuccess={handleLoginSuccess} />} />
+
+          {/* Admin Panel */}
+          <Route
+            path="/admin"
+            element={
+              user?.role === "ADMIN" ? (
+                <MainLayout onLogin={() => setShowLogin(true)} onRegister={() => setShowRegister(true)}>
+                  <AdminDashboard />
+                </MainLayout>
+              ) : (
+                <div className="text-center mt-20 text-red-600 font-bold">
+                  Access Denied. Admins Only.
+                </div>
+              )
+            }
+          />
+
+          {/* 404 Fallback */}
           <Route
             path="*"
             element={
@@ -53,8 +123,37 @@ export default function App() {
         </Routes>
       </main>
 
-      {/* ✅ Footer always visible */}
+      {/* Footer */}
       <Footer />
+
+      {/* ======= Modals ======= */}
+      {showLogin && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center animate-fadeIn">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-[90%] max-w-md p-8 transform scale-100 transition-all duration-300">
+            <button
+              onClick={() => setShowLogin(false)}
+              className="absolute top-3 right-3 text-gray-600 hover:text-black text-xl"
+            >
+              ✕
+            </button>
+            <LoginForm onLoginSuccess={handleLoginSuccess} />
+          </div>
+        </div>
+      )}
+
+      {showRegister && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center overflow-y-auto animate-fadeIn">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-[95%] max-w-5xl p-8 my-8 transform scale-100 transition-all duration-300">
+            <button
+              onClick={() => setShowRegister(false)}
+              className="absolute top-3 right-3 text-gray-600 hover:text-black text-xl"
+            >
+              ✕
+            </button>
+            <RegisterForm onRegisterSuccess={handleLoginSuccess} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

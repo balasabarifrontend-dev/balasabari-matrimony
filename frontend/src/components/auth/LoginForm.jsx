@@ -4,28 +4,24 @@ import { useNavigate, Link } from "react-router-dom";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
 
-export default function LoginForm() {
+export default function LoginForm({ onRegister }) {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        import.meta.env.VITE_API_URL + "/auth/login",
-        form
-      );
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, form);
 
       if (res.status === 200 && res.data.token) {
-        localStorage.setItem("token", res.data.token); // Store JWT token
+        localStorage.setItem("token", res.data.token);
         alert("Login successful!");
-        navigate("/"); // redirect to homepage
+        navigate("/"); // Redirect to homepage
       } else {
         alert("Login failed. Try again!");
       }
@@ -38,18 +34,16 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="bg-white shadow-xl rounded-2xl w-full max-w-md p-8">
+    <div className="bg-white shadow-xl rounded-2xl w-full max-w-md p-8 mx-auto">
       {/* Brand */}
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold text-red-600">
-          BalaSabari Matrimony
-        </h1>
+        <h1 className="text-3xl font-bold text-red-600">BalaSabari Matrimony</h1>
         <p className="text-gray-500 text-sm mt-1">
           Welcome back! Please login to continue.
         </p>
       </div>
 
-      {/* Form */}
+      {/* Login Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           type="email"
@@ -80,9 +74,12 @@ export default function LoginForm() {
 
       {/* Links */}
       <div className="flex justify-between items-center mt-4 text-sm text-gray-600">
-        <Link to="/register" className="hover:text-red-500">
+        <span
+          className="cursor-pointer hover:text-red-500 font-medium"
+          onClick={onRegister}
+        >
           Create an account
-        </Link>
+        </span>
         <Link to="/forgot-password" className="hover:text-red-500">
           Forgot password?
         </Link>

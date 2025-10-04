@@ -1,10 +1,9 @@
-// src/components/common/Navbar.jsx
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { navLinks } from "../../config/footerLinks";
 
-export default function Navbar() {
+export default function Navbar({ onLogin, onRegister }) {
   const [open, setOpen] = useState(false);
   const location = useLocation();
 
@@ -30,9 +29,6 @@ export default function Navbar() {
                     ? "text-yellow-300 font-bold"
                     : ""
                 }`}
-                aria-current={
-                  location.pathname === link.path ? "page" : undefined
-                }
               >
                 {link.label}
               </Link>
@@ -42,32 +38,26 @@ export default function Navbar() {
 
         {/* Desktop Buttons */}
         <div className="hidden md:flex space-x-3">
-          <Link
-            to="/login"
+          <button
+            onClick={onLogin}
             className="px-4 py-1 bg-yellow-400 text-red-900 rounded-lg font-semibold hover:bg-yellow-500 transition"
           >
             Login
-          </Link>
-          <Link
-            to="/register"
+          </button>
+          <button
+            onClick={onRegister}
             className="px-4 py-1 border border-yellow-400 rounded-lg hover:bg-yellow-400 hover:text-red-900 transition"
           >
             Register
-          </Link>
+          </button>
         </div>
 
         {/* Mobile Menu Toggle */}
         <button
           className="md:hidden text-white focus:outline-none"
           onClick={() => setOpen(!open)}
-          aria-label={open ? "Close menu" : "Open menu"}
-          aria-expanded={open}
         >
-          {open ? (
-            <XMarkIcon className="w-7 h-7" />
-          ) : (
-            <Bars3Icon className="w-7 h-7" />
-          )}
+          {open ? <XMarkIcon className="w-7 h-7" /> : <Bars3Icon className="w-7 h-7" />}
         </button>
       </div>
 
@@ -87,9 +77,6 @@ export default function Navbar() {
                   ? "text-yellow-300 font-bold"
                   : ""
               }`}
-              aria-current={
-                location.pathname === link.path ? "page" : undefined
-              }
               onClick={() => setOpen(false)}
             >
               {link.label}
@@ -98,20 +85,24 @@ export default function Navbar() {
 
           {/* Mobile Buttons */}
           <div className="flex space-x-3 pt-3">
-            <Link
-              to="/login"
+            <button
+              onClick={() => {
+                onLogin();
+                setOpen(false);
+              }}
               className="flex-1 text-center px-4 py-2 bg-yellow-400 text-red-900 rounded-lg font-semibold hover:bg-yellow-500 transition"
-              onClick={() => setOpen(false)}
             >
               Login
-            </Link>
-            <Link
-              to="/register"
+            </button>
+            <button
+              onClick={() => {
+                onRegister();
+                setOpen(false);
+              }}
               className="flex-1 text-center px-4 py-2 border border-yellow-400 rounded-lg hover:bg-yellow-400 hover:text-red-900 transition"
-              onClick={() => setOpen(false)}
             >
               Register
-            </Link>
+            </button>
           </div>
         </div>
       </div>
