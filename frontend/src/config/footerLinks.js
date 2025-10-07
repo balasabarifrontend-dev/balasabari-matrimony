@@ -15,7 +15,7 @@ export const footerLinks = {
     { path: "/", label: "Home" },
     { path: "/register", label: "Register" },
     { path: "/login", label: "Login" },
-    { path: "/search", label: "Search" },
+    // { path: "/search", label: "Search" },
     { path: "/contact", label: "Contact Us" },
   ],
   services: [

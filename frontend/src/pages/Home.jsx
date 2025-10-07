@@ -12,6 +12,13 @@ export default function HomePage() {
 
   const isModalOpen = showLogin || showRegister;
 
+  // ADD THIS FUNCTION
+  const handleLoginSuccess = (userData) => {
+    localStorage.setItem("user", JSON.stringify(userData));
+    setShowLogin(false);
+    window.location.reload(); // or you can use navigate to dashboard
+  };
+
   return (
     <div className="w-full flex flex-col relative overflow-hidden">
       {/* Page Content with blur when modal open */}
@@ -59,33 +66,35 @@ export default function HomePage() {
 
       {/* Login Modal */}
       {showLogin && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center overflow-y-auto animate-fadeIn">
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 my-8 mx-4 transform scale-100 transition-all duration-300">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center animate-fadeIn">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-auto max-w-[95vw] p-8 my-8 mx-4 transform scale-100 transition-all duration-300">
             <button
               onClick={() => setShowLogin(false)}
               className="absolute top-3 right-3 text-gray-600 hover:text-black text-xl"
             >
               ✕
             </button>
-            <LoginForm />
+            {/* PASS handleLoginSuccess HERE */}
+            <LoginForm onLoginSuccess={handleLoginSuccess} />
           </div>
         </div>
       )}
 
+      {/* Register Modal */}
       {showRegister && (
-  <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center overflow-y-auto animate-fadeIn">
-    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 sm:p-8 mx-4 sm:mx-auto transform scale-100 transition-all duration-300">
-      <button
-        onClick={() => setShowRegister(false)}
-        className="absolute top-3 right-3 text-gray-600 hover:text-black text-xl"
-      >
-        ✕
-      </button>
-      <RegisterForm />
-    </div>
-  </div>
-)}
-
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center overflow-y-auto animate-fadeIn">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-auto max-w-[95vw] my-8 mx-4 transform scale-100 transition-all duration-300">
+            <button
+              onClick={() => setShowRegister(false)}
+              className="absolute top-3 right-3 text-gray-600 hover:text-black text-xl z-10 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg"
+            >
+              ✕
+            </button>
+            {/* PASS handleLoginSuccess HERE */}
+            <RegisterForm onRegisterSuccess={handleLoginSuccess} isInModal={true} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,7 @@
 package com.matrimony.model;
+
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "profiles")
@@ -24,11 +26,31 @@ public class Profile {
     private String location;
     private String religion;
     private String caste;
+    
+    // Additional fields for advanced search
+    private String maritalStatus;
+    private Double height; // in cm
+    private String education;
+    private String occupation;
+    private Double annualIncome;
+    private String familyStatus;
+    private String familyType;
+    
+    @Column(columnDefinition = "TEXT")
+    private String about;
+    
+    private String country;
+    private String state;
+    private String district;
+    
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     // Constructors
     public Profile() {}
 
-    public Profile(User user, String fullName, String gender, Integer age, String location, String religion, String caste) {
+    public Profile(User user, String fullName, String gender, Integer age, String location, 
+                   String religion, String caste) {
         this.user = user;
         this.fullName = fullName;
         this.gender = gender;
@@ -36,72 +58,61 @@ public class Profile {
         this.location = location;
         this.religion = religion;
         this.caste = caste;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
     // Getters and Setters
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public String getGender() {
-        return gender;
-    }
-
-    public void setGender(String gender) {
-        this.gender = gender;
-    }
-
-    public Integer getAge() {
-        return age;
-    }
-
-    public void setAge(Integer age) {
-        this.age = age;
-    }
-
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
-
-    public String getReligion() {
-        return religion;
-    }
-
-    public void setReligion(String religion) {
-        this.religion = religion;
-    }
-
-    public String getCaste() {
-        return caste;
-    }
-
-    public void setCaste(String caste) {
-        this.caste = caste;
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
+    public Integer getAge() { return age; }
+    public void setAge(Integer age) { this.age = age; }
+    public String getLocation() { return location; }
+    public void setLocation(String location) { this.location = location; }
+    public String getReligion() { return religion; }
+    public void setReligion(String religion) { this.religion = religion; }
+    public String getCaste() { return caste; }
+    public void setCaste(String caste) { this.caste = caste; }
+    public String getMaritalStatus() { return maritalStatus; }
+    public void setMaritalStatus(String maritalStatus) { this.maritalStatus = maritalStatus; }
+    public Double getHeight() { return height; }
+    public void setHeight(Double height) { this.height = height; }
+    public String getEducation() { return education; }
+    public void setEducation(String education) { this.education = education; }
+    public String getOccupation() { return occupation; }
+    public void setOccupation(String occupation) { this.occupation = occupation; }
+    public Double getAnnualIncome() { return annualIncome; }
+    public void setAnnualIncome(Double annualIncome) { this.annualIncome = annualIncome; }
+    public String getFamilyStatus() { return familyStatus; }
+    public void setFamilyStatus(String familyStatus) { this.familyStatus = familyStatus; }
+    public String getFamilyType() { return familyType; }
+    public void setFamilyType(String familyType) { this.familyType = familyType; }
+    public String getAbout() { return about; }
+    public void setAbout(String about) { this.about = about; }
+    public String getCountry() { return country; }
+    public void setCountry(String country) { this.country = country; }
+    public String getState() { return state; }
+    public void setState(String state) { this.state = state; }
+    public String getDistrict() { return district; }
+    public void setDistrict(String district) { this.district = district; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
     @Override
     public String toString() {

@@ -1,10 +1,17 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axios from "../../api/axios"; // your axios instance
 import Stepper from "../ui/Stepper";
 import StepperController from "../ui/StepperControl";
 import FloatingInput from "../ui/FloatingInput";
 
-export default function RegisterForm() {
+export default function RegisterForm({ isInModal = false, onRegisterSuccess, onSwitch, onClose }) {
+  // Better modal detection: if any modal-specific props are passed, assume it's in a modal
+  const inModal = isInModal || !!onRegisterSuccess || !!onSwitch || !!onClose;
+  
+  console.log('=== REGISTERFORM RENDERED ===');
+  console.log('isInModal prop:', isInModal);
+  console.log('Modal detection - inModal:', inModal);
+  console.log('Props received:', { isInModal, onRegisterSuccess, onSwitch, onClose });
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -77,24 +84,119 @@ export default function RegisterForm() {
   const prevStep = () => setStep((s) => s - 1);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-    const payload = { ...form };
-    if (form.dob) {
-      payload.age = new Date().getFullYear() - new Date(form.dob).getFullYear();
+  try {
+    // Step 1: Register User (Authentication) - only send required fields
+    const userRegistrationData = {
+      email: form.email,
+      mobile: form.mobile,
+      password: form.password,
+      name: form.name
+    };
+
+    console.log('Step 1: Registering user with data:', userRegistrationData);
+    console.log('API URL:', import.meta.env.VITE_API_URL + "/auth/register");
+
+    // Register the user first
+    const userResponse = await axios.post(
+      import.meta.env.VITE_API_URL + "/auth/register", 
+      userRegistrationData,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    );
+    
+    console.log('User registration successful:', userResponse.data);
+    
+    // Step 2: Create Profile with the user ID
+    const userId = userResponse.data.id;
+    
+    const profileData = {
+      fullName: form.name,
+      gender: form.gender,
+      age: form.age || (form.dob ? new Date().getFullYear() - new Date(form.dob).getFullYear() : null),
+      location: form.district || form.state || form.country,
+      religion: form.religion,
+      caste: form.caste,
+      userId: userId,
+      // Add all other profile fields
+      dob: form.dob,
+      partnerAgeMin: form.partnerAgeMin,
+      partnerAgeMax: form.partnerAgeMax,
+      subcaste: form.subcaste,
+      dosham: form.dosham,
+      willingOtherCaste: form.willingOtherCaste,
+      maritalStatus: form.maritalStatus,
+      childrenCount: form.childrenCount,
+      childrenWithYou: form.childrenWithYou,
+      height: form.height,
+      familyStatus: form.familyStatus,
+      familyType: form.familyType,
+      education: form.education,
+      specialization: form.specialization,
+      employedIn: form.employedIn,
+      occupation: form.occupation,
+      annualIncome: form.annualIncome,
+      district: form.district,
+      pincode: form.pincode,
+      state: form.state,
+      country: form.country,
+      about: form.about
+    };
+
+    console.log('Step 2: Creating profile:', profileData);
+
+    // Create the profile
+    const profileResponse = await axios.post(
+      import.meta.env.VITE_API_URL + "/profiles", 
+      profileData,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    );
+
+    console.log('Profile creation successful:', profileResponse.data);
+    alert("Registration completed successfully!");
+    
+    // Call success callback if provided
+    if (onRegisterSuccess) {
+      onRegisterSuccess(userResponse.data);
+    }
+    
+    // Close modal if in modal
+    if (onClose) {
+      onClose();
     }
 
-    try {
-      await axios.post(import.meta.env.VITE_API_URL + "/api/auth", form);
-      alert("Registered successfully!");
-    } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.error || "Registration failed");
-    } finally {
-      setLoading(false);
+  } catch (err) {
+    console.error('=== REGISTRATION ERROR DETAILS ===');
+    console.error('Full error object:', err);
+    console.error('Error message:', err.message);
+    console.error('Error code:', err.code);
+    console.error('Error config:', err.config);
+    console.error('Error response status:', err.response?.status);
+    console.error('Error response status text:', err.response?.statusText);
+    console.error('Error response headers:', err.response?.headers);
+    console.error('Error response data:', err.response?.data);
+    console.error('Error request:', err.request);
+    
+    if (err.response?.data) {
+      alert(`Registration failed (${err.response.status}): ${JSON.stringify(err.response.data, null, 2)}`);
+    } else if (err.request) {
+      alert("Registration failed: No response received from server. Check if backend is running.");
+    } else {
+      alert("Registration failed: " + err.message);
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Heading per step
   const getStepHeading = () => {

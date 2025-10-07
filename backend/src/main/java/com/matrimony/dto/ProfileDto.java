@@ -1,18 +1,42 @@
 package com.matrimony.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
 public class ProfileDto {
     private Long id;
+    
+    @NotBlank(message = "Full name is required")
     private String fullName;
+    
+    @NotBlank(message = "Gender is required")
     private String gender;
+    
+    @NotNull(message = "Age is required")
+    @Positive(message = "Age must be positive")
     private Integer age;
+    
     private String location;
     private String religion;
     private String caste;
+    
+    @NotNull(message = "User ID is required")
     private Long userId;
+
+    // Additional fields for enhanced filtering
+    private String maritalStatus;
+    private Double height;
+    private String education;
+    private String occupation;
+    private String familyStatus;
+    private String familyType;
+    private String about;
 
     public ProfileDto() {}
 
-    public ProfileDto(Long id, String fullName, String gender, Integer age, String location, String religion, String caste, Long userId) {
+    public ProfileDto(Long id, String fullName, String gender, Integer age, String location, 
+                     String religion, String caste, Long userId) {
         this.id = id;
         this.fullName = fullName;
         this.gender = gender;
@@ -40,4 +64,18 @@ public class ProfileDto {
     public void setCaste(String caste) { this.caste = caste; }
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
+    public String getMaritalStatus() { return maritalStatus; }
+    public void setMaritalStatus(String maritalStatus) { this.maritalStatus = maritalStatus; }
+    public Double getHeight() { return height; }
+    public void setHeight(Double height) { this.height = height; }
+    public String getEducation() { return education; }
+    public void setEducation(String education) { this.education = education; }
+    public String getOccupation() { return occupation; }
+    public void setOccupation(String occupation) { this.occupation = occupation; }
+    public String getFamilyStatus() { return familyStatus; }
+    public void setFamilyStatus(String familyStatus) { this.familyStatus = familyStatus; }
+    public String getFamilyType() { return familyType; }
+    public void setFamilyType(String familyType) { this.familyType = familyType; }
+    public String getAbout() { return about; }
+    public void setAbout(String about) { this.about = about; }
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Button from "../ui/Button";
 
-import BannerImage1 from "../../assets/BannerImage1.jpg";
+import BannerImage1 from "../../assets/BannerImage1.png";
 import BannerImage2 from "../../assets/BannerImage2.png";
 import BannerImage3 from "../../assets/BannerImage3.jpg";
 import BannerImage4 from "../../assets/BannerImage4.jpg";
@@ -18,7 +18,7 @@ export default function Banner({ selectedMenu, onGetStarted }) {
       setTimeout(() => {
         setCurrentIndex(selectedMenu % bannerImages.length);
         setFade(true);
-      }, 300);
+      }, 1000);
     }
   }, [selectedMenu]);
 

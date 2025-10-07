@@ -1,14 +1,83 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axios from "../../api/axios";
 
-const casteOptions = {
-  Brahmin: ["Iyer", "Iyengar", "Smartha", "Others"],
-  Mudaliar: ["Thondaimandala", "Thiruvathira", "Saiva", "Others"],
-  Nadar: ["Gramani", "Shanar", "Others"],
-  Vanniyar: ["Padayatchi", "Gounder", "Others"],
-  Muslim: ["Sunni", "Shia", "Others"],
-  Christian: ["Roman Catholic", "CSI", "Pentecost", "Others"],
+// Comprehensive caste data based on your document
+const casteData = {
+  Hindu: {
+    "Forward / General": [
+      "Brahmin (Iyer)", "Brahmin (Iyengar)", "Brahmin (Smartha)", "Brahmin (Others)",
+      "Mudaliar (Thondaimandala)", "Mudaliar (Saiva)", "Mudaliar (Others)",
+      "Chettiar (Vellan)", "Chettiar (Elur)", "Chettiar (Others)",
+      "Naidu (Balija)", "Naidu (Gavara)", "Naidu (Kamma)", "Naidu (Others)"
+    ],
+    "Backward Classes (BC)": [
+      "Nadar (Hindu)", "Mudaliar (Sengunthar)", "Chettiar", "Naidu", 
+      "Yadava / Konar", "Gounder (some subgroups)", "Vanniyar (some regions)"
+    ],
+    "Most Backward Classes (MBC)": [
+      "Agamudayar", "Vanniyar / Vanniya Kula Kshatriya", "Isai Vellalar",
+      "Devanga Chettiar", "Nadar (except Christian)", "Kallar", "Maravar", 
+      "Agamudayar (Thevar)", "Gounder (Kongu Vellalar)", "Mudaliar (some subgroups)",
+      "Naidu (some subgroups)", "Chettiar (some subgroups)", "Kuravar", "Oddar",
+      "Vettuva Gounder", "Muthuraja", "Thottia Naicker", "Yadava / Konar"
+    ],
+    "Scheduled Castes (SC)": [
+      "Adi Dravida", "Arunthathiyar", "Chakkiliyan", "Devendrakula Velalar",
+      "Pallar", "Paraiyan (Parayar)", "Vannan", "Valluvan", "Thandan"
+    ],
+    "Scheduled Tribes (ST)": [
+      "Kani", "Malayali", "Kattunayakan", "Paniyan", "Irular", 
+      "Kurumban", "Thottiyan", "Toda", "Kota", "Malai Vedan"
+    ]
+  },
+  Christian: {
+    "Backward Classes (BC)": [
+      "Anglo Indian", "Latin Catholic", "Nadar (Christian)", 
+      "Vanniyar (Christian)", "Vellalar (Christian)", "Pillai (Christian)",
+      "Gounder (Christian)", "Chettiar (Christian)", "Naidu (Christian)",
+      "Reddy (Christian)", "Devar (Christian)", "Konar / Yadava (Christian)",
+      "Isai Vellalar (Christian)"
+    ],
+    "Most Backward Classes (MBC)": [
+      "Paravar (Christian)", "Mukkuvar (Christian)", "Nanjil Nadar (Christian)",
+      "Latin Catholic (Fishermen groups)"
+    ],
+    "Other Christians": [
+      "Adi Dravida (Christian)", "Parayar (Christian)", "Pallan (Christian)",
+      "Arunthathiyar (Christian)", "Chakkiliyar (Christian)", "Vannan (Christian)"
+    ]
+  },
+  Muslim: {
+    "Backward Classes (BC)": [
+      "Labbai / Labbai (Tamil Muslims)", "Rowther (Rawther / Ravuthar)",
+      "Maraikkayar (Marakkayar / Maricar)", "Sheik (Shaikh)", "Syed (Sayyid)",
+      "Pathan", "Dudekula / Pinjara", "All Muslims (general)"
+    ],
+    "Most Backward Classes (MBC)": [
+      "Meenavar Muslims (Fisherfolk)", "Labbai (backward regions)",
+      "Dudekula / Pinjara (some districts)", "Sheik (rural belts)"
+    ]
+  }
 };
+
+// Height options in feet
+const heightOptions = Array.from({ length: 16 }, (_, i) => {
+  const feet = 4 + Math.floor(i / 2);
+  const inches = (i % 2) * 6;
+  return `${feet}.${inches}`;
+}).filter(height => {
+  const [feet, inches] = height.split('.').map(Number);
+  return (feet === 4 && inches >= 0) || (feet === 5) || (feet === 6 && inches <= 6) || (feet === 7 && inches <= 3);
+});
+
+// Marital status options
+const maritalStatusOptions = [
+  "Never Married",
+  "Divorced",
+  "Widowed",
+  "Separated",
+  "Awaiting Divorce"
+];
 
 export default function FilterSidebar({ onSearch }) {
   const [filters, setFilters] = useState({
@@ -18,11 +87,12 @@ export default function FilterSidebar({ onSearch }) {
     partnerAgeFrom: "",
     partnerAgeTo: "",
     religion: "",
+    casteCategory: "",
     caste: "",
     subCaste: "",
-    manualCaste: "",
     maritalStatus: "",
-    height: "",
+    heightFrom: "",
+    heightTo: "",
     familyStatus: "",
     familyType: "",
     education: "",
@@ -34,14 +104,36 @@ export default function FilterSidebar({ onSearch }) {
 
   const [loading, setLoading] = useState(false);
 
-  const change = (e) => setFilters({ ...filters, [e.target.name]: e.target.value });
+  const change = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => {
+      const newFilters = { ...prev, [name]: value };
+      
+      // Reset dependent fields when religion changes
+      if (name === "religion") {
+        newFilters.casteCategory = "";
+        newFilters.caste = "";
+        newFilters.subCaste = "";
+      }
+      
+      // Reset caste when category changes
+      if (name === "casteCategory") {
+        newFilters.caste = "";
+        newFilters.subCaste = "";
+      }
+      
+      return newFilters;
+    });
+  };
 
   const apply = async () => {
     setLoading(true);
     try {
       const payload = {
         ...filters,
-        caste: filters.caste === "Other" ? filters.manualCaste : filters.caste,
+        // Convert height from feet to centimeters for backend processing
+        heightFrom: filters.heightFrom ? parseFloat(filters.heightFrom) * 30.48 : null,
+        heightTo: filters.heightTo ? parseFloat(filters.heightTo) * 30.48 : null,
       };
 
       const res = await axios.post(
@@ -51,9 +143,22 @@ export default function FilterSidebar({ onSearch }) {
       if (onSearch) onSearch(res.data.profiles || res.data || []);
     } catch (e) {
       console.error("Filter search error:", e);
+      alert("Search failed: " + (e.response?.data?.message || e.message));
     } finally {
       setLoading(false);
     }
+  };
+
+  // Get available caste categories based on selected religion
+  const getCasteCategories = () => {
+    if (!filters.religion || !casteData[filters.religion]) return [];
+    return Object.keys(casteData[filters.religion]);
+  };
+
+  // Get available castes based on selected religion and category
+  const getCastes = () => {
+    if (!filters.religion || !filters.casteCategory || !casteData[filters.religion]) return [];
+    return casteData[filters.religion][filters.casteCategory] || [];
   };
 
   return (
@@ -63,14 +168,14 @@ export default function FilterSidebar({ onSearch }) {
       <div className="space-y-5">
         {/* Gender */}
         <div>
-          <label className="block font-medium text-gray-700 mb-2">Gender</label>
+          <label className="block font-medium text-gray-700 mb-2">Looking for</label>
           <select
             name="gender"
             value={filters.gender}
             onChange={change}
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
           >
-            <option value="">Any</option>
+            <option value="">Any Gender</option>
             <option value="Male">Groom</option>
             <option value="Female">Bride</option>
           </select>
@@ -78,7 +183,7 @@ export default function FilterSidebar({ onSearch }) {
 
         {/* Age Range */}
         <div>
-          <label className="block font-medium text-gray-700 mb-2">Age</label>
+          <label className="block font-medium text-gray-700 mb-2">Age Range</label>
           <div className="flex gap-3">
             <input
               type="number"
@@ -86,6 +191,8 @@ export default function FilterSidebar({ onSearch }) {
               value={filters.ageFrom}
               onChange={change}
               placeholder="From"
+              min="18"
+              max="80"
               className="w-1/2 border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
             <input
@@ -94,6 +201,8 @@ export default function FilterSidebar({ onSearch }) {
               value={filters.ageTo}
               onChange={change}
               placeholder="To"
+              min="18"
+              max="80"
               className="w-1/2 border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
           </div>
@@ -101,7 +210,7 @@ export default function FilterSidebar({ onSearch }) {
 
         {/* Partner Age Range */}
         <div>
-          <label className="block font-medium text-gray-700 mb-2">Partner Age</label>
+          <label className="block font-medium text-gray-700 mb-2">Preferred Partner Age</label>
           <div className="flex gap-3">
             <input
               type="number"
@@ -109,6 +218,8 @@ export default function FilterSidebar({ onSearch }) {
               value={filters.partnerAgeFrom}
               onChange={change}
               placeholder="From"
+              min="18"
+              max="80"
               className="w-1/2 border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
             <input
@@ -117,6 +228,8 @@ export default function FilterSidebar({ onSearch }) {
               value={filters.partnerAgeTo}
               onChange={change}
               placeholder="To"
+              min="18"
+              max="80"
               className="w-1/2 border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
           </div>
@@ -131,58 +244,63 @@ export default function FilterSidebar({ onSearch }) {
             onChange={change}
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
           >
-            <option value="">Any</option>
+            <option value="">Any Religion</option>
             <option value="Hindu">Hindu</option>
             <option value="Christian">Christian</option>
             <option value="Muslim">Muslim</option>
           </select>
         </div>
 
-        {/* Caste & Subcaste */}
-        <div>
-          <label className="block font-medium text-gray-700 mb-2">Caste</label>
-          <select
-            name="caste"
-            value={filters.caste}
-            onChange={change}
-            className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-          >
-            <option value="">Any</option>
-            {Object.keys(casteOptions).map((caste) => (
-              <option key={caste} value={caste}>
-                {caste}
-              </option>
-            ))}
-            <option value="Other">Other</option>
-          </select>
-
-          {filters.caste && filters.caste !== "Other" && (
+        {/* Caste Category (only show if religion selected) */}
+        {filters.religion && (
+          <div>
+            <label className="block font-medium text-gray-700 mb-2">Caste Category</label>
             <select
+              name="casteCategory"
+              value={filters.casteCategory}
+              onChange={change}
+              className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            >
+              <option value="">Any Category</option>
+              {getCasteCategories().map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Caste (only show if religion and category selected) */}
+        {filters.religion && filters.casteCategory && (
+          <div>
+            <label className="block font-medium text-gray-700 mb-2">Caste</label>
+            <select
+              name="caste"
+              value={filters.caste}
+              onChange={change}
+              className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            >
+              <option value="">Any Caste</option>
+              {getCastes().map(caste => (
+                <option key={caste} value={caste}>{caste}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Sub Caste */}
+        {filters.caste && (
+          <div>
+            <label className="block font-medium text-gray-700 mb-2">Sub Caste</label>
+            <input
+              type="text"
               name="subCaste"
               value={filters.subCaste}
               onChange={change}
-              className="w-full border rounded-lg p-2 mt-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-            >
-              <option value="">Any</option>
-              {casteOptions[filters.caste].map((sub) => (
-                <option key={sub} value={sub}>
-                  {sub}
-                </option>
-              ))}
-            </select>
-          )}
-
-          {filters.caste === "Other" && (
-            <input
-              type="text"
-              name="manualCaste"
-              value={filters.manualCaste}
-              onChange={change}
-              placeholder="Enter your caste"
-              className="w-full border rounded-lg p-2 mt-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              placeholder="Enter sub-caste"
+              className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
             />
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Marital Status */}
         <div>
@@ -193,49 +311,71 @@ export default function FilterSidebar({ onSearch }) {
             onChange={change}
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
           >
-            <option value="">Any</option>
-            <option value="Never Married">Never Married</option>
-            <option value="Divorced">Divorced</option>
-            <option value="Widowed">Widowed</option>
+            <option value="">Any Status</option>
+            {maritalStatusOptions.map(status => (
+              <option key={status} value={status}>{status}</option>
+            ))}
           </select>
         </div>
 
-        {/* Height */}
+        {/* Height Range */}
         <div>
-          <label className="block font-medium text-gray-700 mb-2">Height (ft)</label>
-          <input
-            type="text"
-            name="height"
-            value={filters.height}
-            onChange={change}
-            placeholder="Eg: 5.5"
-            className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-          />
+          <label className="block font-medium text-gray-700 mb-2">Height Range (feet)</label>
+          <div className="flex gap-3">
+            <select
+              name="heightFrom"
+              value={filters.heightFrom}
+              onChange={change}
+              className="w-1/2 border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            >
+              <option value="">Min Height</option>
+              {heightOptions.map(height => (
+                <option key={`from-${height}`} value={height}>{height} ft</option>
+              ))}
+            </select>
+            <select
+              name="heightTo"
+              value={filters.heightTo}
+              onChange={change}
+              className="w-1/2 border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            >
+              <option value="">Max Height</option>
+              {heightOptions.map(height => (
+                <option key={`to-${height}`} value={height}>{height} ft</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Family Status & Type */}
         <div>
           <label className="block font-medium text-gray-700 mb-2">Family Status</label>
-          <input
-            type="text"
+          <select
             name="familyStatus"
             value={filters.familyStatus}
             onChange={change}
-            placeholder="Eg: Middle Class"
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-          />
+          >
+            <option value="">Any Status</option>
+            <option value="Middle Class">Middle Class</option>
+            <option value="Upper Middle Class">Upper Middle Class</option>
+            <option value="Rich">Rich</option>
+            <option value="Affluent">Affluent</option>
+          </select>
         </div>
 
         <div>
           <label className="block font-medium text-gray-700 mb-2">Family Type</label>
-          <input
-            type="text"
+          <select
             name="familyType"
             value={filters.familyType}
             onChange={change}
-            placeholder="Eg: Joint / Nuclear"
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
-          />
+          >
+            <option value="">Any Type</option>
+            <option value="Joint">Joint Family</option>
+            <option value="Nuclear">Nuclear Family</option>
+          </select>
         </div>
 
         {/* Education */}
@@ -246,7 +386,7 @@ export default function FilterSidebar({ onSearch }) {
             name="education"
             value={filters.education}
             onChange={change}
-            placeholder="Eg: B.Tech, MBA"
+            placeholder="Eg: B.Tech, MBA, Doctor"
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
           />
         </div>
@@ -259,14 +399,14 @@ export default function FilterSidebar({ onSearch }) {
             name="occupation"
             value={filters.occupation}
             onChange={change}
-            placeholder="Eg: Software Engineer"
+            placeholder="Eg: Software Engineer, Doctor, Business"
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
           />
         </div>
 
         {/* Annual Income */}
         <div>
-          <label className="block font-medium text-gray-700 mb-2">Annual Income (Rs)</label>
+          <label className="block font-medium text-gray-700 mb-2">Annual Income (₹ Lakhs)</label>
           <div className="flex gap-3">
             <input
               type="number"
@@ -295,7 +435,7 @@ export default function FilterSidebar({ onSearch }) {
             name="location"
             value={filters.location}
             onChange={change}
-            placeholder="City / District"
+            placeholder="City / District / State"
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
           />
         </div>
@@ -304,294 +444,11 @@ export default function FilterSidebar({ onSearch }) {
         <button
           onClick={apply}
           disabled={loading}
-          className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+          className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition disabled:opacity-50 font-semibold"
         >
-          {loading ? "Applying..." : "Apply Filters"}
+          {loading ? "Searching..." : "Apply Filters & Search"}
         </button>
       </div>
     </div>
   );
 }
-
-
-// import React, { useState } from "react";
-// import axios from "axios";
-
-// const casteOptions = {
-//   Brahmin: ["Iyer", "Iyengar", "Smartha", "Others"],
-//   Mudaliar: ["Thondaimandala", "Thiruvathira", "Saiva", "Others"],
-//   Nadar: ["Gramani", "Shanar", "Others"],
-//   Vanniyar: ["Padayatchi", "Gounder", "Others"],
-//   Muslim: ["Sunni", "Shia", "Others"],
-//   Christian: ["Roman Catholic", "CSI", "Pentecost", "Others"],
-// };
-
-// export default function FilterSidebar({ onSearch }) {
-//   const [filters, setFilters] = useState({
-//     ageFrom: "",
-//     ageTo: "",
-//     religion: "",
-//     caste: "",
-//     subCaste: "",
-//     manualCaste: "",
-//     location: "",
-//     education: "",
-//     profession: "",
-//   });
-//   const [loading, setLoading] = useState(false);
-
-//   const change = (e) =>
-//     setFilters({ ...filters, [e.target.name]: e.target.value });
-
-//   const apply = async () => {
-//     setLoading(true);
-//     try {
-//       const payload = {
-//         ...filters,
-//         caste: filters.caste === "Other" ? filters.manualCaste : filters.caste,
-//       };
-
-//       const res = await axios.post(
-//         import.meta.env.VITE_API_URL + "/profiles/search",
-//         payload
-//       );
-//       if (onSearch) onSearch(res.data.profiles || res.data || []);
-//     } catch (e) {
-//       console.error("Filter search error:", e);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   return (
-//     <div className="bg-white p-6 rounded-xl shadow-lg">
-//       <h3 className="font-semibold text-red-600 mb-4">Filters</h3>
-
-//       <div className="space-y-4">
-//         {/* Age */}
-//         <div>
-//           <label className="block text-sm font-medium">Age</label>
-//           <div className="flex space-x-2 mt-1">
-//             <input
-//               type="number"
-//               name="ageFrom"
-//               value={filters.ageFrom}
-//               onChange={change}
-//               placeholder="From"
-//               className="w-1/2 border p-2 rounded"
-//             />
-//             <input
-//               type="number"
-//               name="ageTo"
-//               value={filters.ageTo}
-//               onChange={change}
-//               placeholder="To"
-//               className="w-1/2 border p-2 rounded"
-//             />
-//           </div>
-//         </div>
-
-//         {/* Religion */}
-//         <div>
-//           <label className="block text-sm font-medium">Religion</label>
-//           <select
-//             name="religion"
-//             value={filters.religion}
-//             onChange={change}
-//             className="w-full border p-2 rounded mt-1"
-//           >
-//             <option value="">Any</option>
-//             <option value="Hindu">Hindu</option>
-//             <option value="Christian">Christian</option>
-//             <option value="Muslim">Muslim</option>
-//           </select>
-//         </div>
-
-//         {/* Caste + Subcaste */}
-//         <div>
-//           <label className="block text-sm font-medium">Caste</label>
-//           <select
-//             name="caste"
-//             value={filters.caste}
-//             onChange={change}
-//             className="w-full border p-2 rounded mt-1"
-//           >
-//             <option value="">Any</option>
-//             {Object.keys(casteOptions).map((caste) => (
-//               <option key={caste} value={caste}>
-//                 {caste}
-//               </option>
-//             ))}
-//             <option value="Other">Other</option>
-//           </select>
-
-//           {filters.caste && filters.caste !== "Other" && (
-//             <select
-//               name="subCaste"
-//               value={filters.subCaste}
-//               onChange={change}
-//               className="w-full border p-2 rounded mt-2"
-//             >
-//               <option value="">Any</option>
-//               {casteOptions[filters.caste].map((sub) => (
-//                 <option key={sub} value={sub}>
-//                   {sub}
-//                 </option>
-//               ))}
-//             </select>
-//           )}
-
-//           {filters.caste === "Other" && (
-//             <input
-//               type="text"
-//               name="manualCaste"
-//               value={filters.manualCaste}
-//               onChange={change}
-//               placeholder="Enter your caste"
-//               className="w-full border p-2 rounded mt-2"
-//             />
-//           )}
-//         </div>
-
-//         {/* Location */}
-//         <div>
-//           <label className="block text-sm font-medium">Location</label>
-//           <input
-//             type="text"
-//             name="location"
-//             value={filters.location}
-//             onChange={change}
-//             placeholder="City / District"
-//             className="w-full border p-2 rounded mt-1"
-//           />
-//         </div>
-
-//         {/* Education */}
-//         <div>
-//           <label className="block text-sm font-medium">Education</label>
-//           <input
-//             type="text"
-//             name="education"
-//             value={filters.education}
-//             onChange={change}
-//             placeholder="Eg: B.Tech, MBA"
-//             className="w-full border p-2 rounded mt-1"
-//           />
-//         </div>
-
-//         {/* Profession */}
-//         <div>
-//           <label className="block text-sm font-medium">Profession</label>
-//           <input
-//             type="text"
-//             name="profession"
-//             value={filters.profession}
-//             onChange={change}
-//             placeholder="Eg: Software Engineer"
-//             className="w-full border p-2 rounded mt-1"
-//           />
-//         </div>
-
-//         {/* Apply */}
-//         <button
-//           onClick={apply}
-//           disabled={loading}
-//           className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition disabled:opacity-50"
-//         >
-//           {loading ? "Applying..." : "Apply Filters"}
-//         </button>
-//       </div>
-//     </div>
-//   );
-// }
-
-// src/components/profiles/FilterSidebar.jsx
-
-// import React from "react";
-
-// export default function FilterSidebar({ filters = {}, setFilters = () => {} }) {
-//   const { minAge = "", maxAge = "", location = "", religion = "", gender = "" } = filters;
-
-//   return (
-//     <aside className="bg-white shadow-lg rounded-2xl p-6 space-y-6 border border-gray-100">
-//       {/* Title */}
-//       <h3 className="text-xl font-bold text-gray-800 border-b pb-3">
-//         Refine Your Search
-//       </h3>
-
-//       {/* Age Range */}
-//       <div>
-//         <label className="block text-gray-600 font-medium mb-2">Age Range</label>
-//         <div className="flex gap-3">
-//           <input
-//             type="number"
-//             placeholder="Min"
-//             value={minAge}
-//             onChange={(e) => setFilters({ ...filters, minAge: e.target.value })}
-//             className="w-1/2 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-//           />
-//           <input
-//             type="number"
-//             placeholder="Max"
-//             value={maxAge}
-//             onChange={(e) => setFilters({ ...filters, maxAge: e.target.value })}
-//             className="w-1/2 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-//           />
-//         </div>
-//       </div>
-
-//       {/* Gender */}
-//       <div>
-//         <label className="block text-gray-600 font-medium mb-2">Gender</label>
-//         <select
-//           value={gender}
-//           onChange={(e) => setFilters({ ...filters, gender: e.target.value })}
-//           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-//         >
-//           <option value="">Any</option>
-//           <option value="Male">Groom</option>
-//           <option value="Female">Bride</option>
-//         </select>
-//       </div>
-
-//       {/* Religion */}
-//       <div>
-//         <label className="block text-gray-600 font-medium mb-2">Religion</label>
-//         <select
-//           value={religion}
-//           onChange={(e) => setFilters({ ...filters, religion: e.target.value })}
-//           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-//         >
-//           <option value="">Any</option>
-//           <option value="Hindu">Hindu</option>
-//           <option value="Muslim">Muslim</option>
-//           <option value="Christian">Christian</option>
-//           <option value="Sikh">Sikh</option>
-//           <option value="Other">Other</option>
-//         </select>
-//       </div>
-
-//       {/* Location */}
-//       <div>
-//         <label className="block text-gray-600 font-medium mb-2">Location</label>
-//         <input
-//           type="text"
-//           placeholder="Enter city"
-//           value={location}
-//           onChange={(e) => setFilters({ ...filters, location: e.target.value })}
-//           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-//         />
-//       </div>
-
-//       {/* Apply Button */}
-//       <button
-//         onClick={() => console.log("Filters applied:", filters)}
-//         className="w-full bg-indigo-600 text-white font-semibold py-2 rounded-lg hover:bg-indigo-700 transition"
-//       >
-//         Apply Filters
-//       </button>
-//     </aside>
-//   );
-// }
-
-

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axios from "../api/axios"; // your axios instance
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);

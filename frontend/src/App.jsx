@@ -127,33 +127,33 @@ export default function App() {
       <Footer />
 
       {/* ======= Modals ======= */}
-      {showLogin && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center animate-fadeIn">
-          <div className="relative bg-white rounded-2xl shadow-2xl w-[90%] max-w-md p-8 transform scale-100 transition-all duration-300">
-            <button
-              onClick={() => setShowLogin(false)}
-              className="absolute top-3 right-3 text-gray-600 hover:text-black text-xl"
-            >
-              ✕
-            </button>
-            <LoginForm onLoginSuccess={handleLoginSuccess} />
-          </div>
-        </div>
-      )}
+{showLogin && (
+  <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center animate-fadeIn">
+    <div className="relative bg-white rounded-2xl shadow-2xl w-auto max-w-[95vw] p-8 my-8 mx-4 transform scale-100 transition-all duration-300">
+      <button
+        onClick={() => setShowLogin(false)}
+        className="absolute top-3 right-3 text-gray-600 hover:text-black text-xl"
+      >
+        ✕
+      </button>
+      <LoginForm onLoginSuccess={handleLoginSuccess} />
+    </div>
+  </div>
+)}
 
-      {showRegister && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center overflow-y-auto animate-fadeIn">
-          <div className="relative bg-white rounded-2xl shadow-2xl w-[95%] max-w-5xl p-8 my-8 transform scale-100 transition-all duration-300">
-            <button
-              onClick={() => setShowRegister(false)}
-              className="absolute top-3 right-3 text-gray-600 hover:text-black text-xl"
-            >
-              ✕
-            </button>
-            <RegisterForm onRegisterSuccess={handleLoginSuccess} />
-          </div>
-        </div>
-      )}
+{showRegister && (
+  <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-center items-center overflow-y-auto animate-fadeIn">
+    <div className="relative bg-white rounded-2xl shadow-2xl w-auto max-w-[95vw] my-8 mx-4 transform scale-100 transition-all duration-300">
+      <button
+        onClick={() => setShowRegister(false)}
+        className="absolute top-3 right-3 text-gray-600 hover:text-black text-xl z-10 bg-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg"
+      >
+        ✕
+      </button>
+      <RegisterForm onRegisterSuccess={handleLoginSuccess} isInModal={true} />
+    </div>
+  </div>
+)}
     </div>
   );
 }
