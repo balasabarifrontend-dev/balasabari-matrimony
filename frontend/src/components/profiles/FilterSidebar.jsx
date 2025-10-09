@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "../../api/axios";
+import { profileService } from "../../services/profileService";
 
 // Comprehensive caste data based on your document
 const casteData = {
@@ -103,6 +103,7 @@ export default function FilterSidebar({ onSearch }) {
   });
 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const change = (e) => {
     const { name, value } = e.target;
@@ -124,29 +125,125 @@ export default function FilterSidebar({ onSearch }) {
       
       return newFilters;
     });
+    // Clear error when user changes filters
+    if (error) setError("");
   };
 
   const apply = async () => {
     setLoading(true);
+    setError("");
+    
     try {
-      const payload = {
-        ...filters,
-        // Convert height from feet to centimeters for backend processing
-        heightFrom: filters.heightFrom ? parseFloat(filters.heightFrom) * 30.48 : null,
-        heightTo: filters.heightTo ? parseFloat(filters.heightTo) * 30.48 : null,
+      // Prepare the payload for the search
+      const searchPayload = {
+        gender: filters.gender || undefined,
+        ageFrom: filters.ageFrom ? parseInt(filters.ageFrom) : undefined,
+        ageTo: filters.ageTo ? parseInt(filters.ageTo) : undefined,
+        partnerAgeFrom: filters.partnerAgeFrom ? parseInt(filters.partnerAgeFrom) : undefined,
+        partnerAgeTo: filters.partnerAgeTo ? parseInt(filters.partnerAgeTo) : undefined,
+        religion: filters.religion || undefined,
+        caste: filters.caste || undefined,
+        subCaste: filters.subCaste || undefined,
+        maritalStatus: filters.maritalStatus || undefined,
+        heightFrom: filters.heightFrom ? parseFloat(filters.heightFrom) * 30.48 : undefined, // Convert to cm
+        heightTo: filters.heightTo ? parseFloat(filters.heightTo) * 30.48 : undefined, // Convert to cm
+        familyStatus: filters.familyStatus || undefined,
+        familyType: filters.familyType || undefined,
+        education: filters.education || undefined,
+        occupation: filters.occupation || undefined,
+        annualIncomeFrom: filters.annualIncomeFrom ? parseFloat(filters.annualIncomeFrom) : undefined,
+        annualIncomeTo: filters.annualIncomeTo ? parseFloat(filters.annualIncomeTo) : undefined,
+        location: filters.location || undefined,
       };
 
-      const res = await axios.post(
-        import.meta.env.VITE_API_URL + "/profiles/search",
-        payload
-      );
-      if (onSearch) onSearch(res.data.profiles || res.data || []);
-    } catch (e) {
-      console.error("Filter search error:", e);
-      alert("Search failed: " + (e.response?.data?.message || e.message));
+      console.log('🔍 Searching with filters:', searchPayload);
+
+      // Use profileService for the search
+      const result = await profileService.searchProfiles(searchPayload);
+      
+      console.log('✅ Search results:', result);
+      
+      if (onSearch) {
+        // Pass the profiles array to the parent component
+        onSearch(result.profiles || result.content || result || []);
+      }
+      
+    } catch (err) {
+      console.error("❌ Filter search error:", err);
+      setError(err.message || "Search failed. Please try again.");
+      
+      // If search fails, call onSearch with empty array to clear results
+      if (onSearch) {
+        onSearch([]);
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  // Reset all filters
+  const resetFilters = () => {
+    setFilters({
+      gender: "",
+      ageFrom: "",
+      ageTo: "",
+      partnerAgeFrom: "",
+      partnerAgeTo: "",
+      religion: "",
+      casteCategory: "",
+      caste: "",
+      subCaste: "",
+      maritalStatus: "",
+      heightFrom: "",
+      heightTo: "",
+      familyStatus: "",
+      familyType: "",
+      education: "",
+      occupation: "",
+      annualIncomeFrom: "",
+      annualIncomeTo: "",
+      location: "",
+    });
+    setError("");
+    
+    // Clear search results when resetting
+    if (onSearch) {
+      onSearch([]);
+    }
+  };
+
+  // Quick apply common filters
+  const quickFilter = (type) => {
+    let quickFilters = {};
+    
+    switch (type) {
+      case 'recent':
+        quickFilters = { sortBy: 'createdAt', sortDirection: 'desc' };
+        break;
+      case 'verified':
+        quickFilters = { verified: true };
+        break;
+      case 'premium':
+        quickFilters = { premium: true };
+        break;
+      default:
+        return;
+    }
+    
+    setLoading(true);
+    setError("");
+    
+    profileService.searchProfiles(quickFilters)
+      .then(result => {
+        if (onSearch) {
+          onSearch(result.profiles || result.content || result || []);
+        }
+      })
+      .catch(err => {
+        console.error("Quick filter error:", err);
+        setError(err.message || "Filter failed");
+      })
+      .finally(() => setLoading(false));
   };
 
   // Get available caste categories based on selected religion
@@ -163,7 +260,50 @@ export default function FilterSidebar({ onSearch }) {
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-xl w-full max-h-screen overflow-y-auto">
-      <h3 className="text-xl font-bold text-red-600 mb-6">Advanced Filters</h3>
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="text-xl font-bold text-red-600">Advanced Filters</h3>
+        <button
+          onClick={resetFilters}
+          className="text-sm text-gray-600 hover:text-red-600 underline transition-colors"
+          disabled={loading}
+        >
+          Reset All
+        </button>
+      </div>
+
+      {/* Quick Filters */}
+      <div className="mb-6">
+        <label className="block font-medium text-gray-700 mb-3">Quick Filters</label>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => quickFilter('recent')}
+            disabled={loading}
+            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-lg text-sm hover:bg-blue-200 transition-colors disabled:opacity-50"
+          >
+            Recent
+          </button>
+          <button
+            onClick={() => quickFilter('verified')}
+            disabled={loading}
+            className="px-3 py-1 bg-green-100 text-green-700 rounded-lg text-sm hover:bg-green-200 transition-colors disabled:opacity-50"
+          >
+            Verified
+          </button>
+          <button
+            onClick={() => quickFilter('premium')}
+            disabled={loading}
+            className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-sm hover:bg-purple-200 transition-colors disabled:opacity-50"
+          >
+            Premium
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4 text-sm">
+          <strong>Error:</strong> {error}
+        </div>
+      )}
 
       <div className="space-y-5">
         {/* Gender */}
@@ -174,6 +314,7 @@ export default function FilterSidebar({ onSearch }) {
             value={filters.gender}
             onChange={change}
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            disabled={loading}
           >
             <option value="">Any Gender</option>
             <option value="Male">Groom</option>
@@ -194,6 +335,7 @@ export default function FilterSidebar({ onSearch }) {
               min="18"
               max="80"
               className="w-1/2 border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              disabled={loading}
             />
             <input
               type="number"
@@ -204,6 +346,7 @@ export default function FilterSidebar({ onSearch }) {
               min="18"
               max="80"
               className="w-1/2 border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              disabled={loading}
             />
           </div>
         </div>
@@ -221,6 +364,7 @@ export default function FilterSidebar({ onSearch }) {
               min="18"
               max="80"
               className="w-1/2 border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              disabled={loading}
             />
             <input
               type="number"
@@ -231,6 +375,7 @@ export default function FilterSidebar({ onSearch }) {
               min="18"
               max="80"
               className="w-1/2 border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              disabled={loading}
             />
           </div>
         </div>
@@ -243,6 +388,7 @@ export default function FilterSidebar({ onSearch }) {
             value={filters.religion}
             onChange={change}
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            disabled={loading}
           >
             <option value="">Any Religion</option>
             <option value="Hindu">Hindu</option>
@@ -260,6 +406,7 @@ export default function FilterSidebar({ onSearch }) {
               value={filters.casteCategory}
               onChange={change}
               className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              disabled={loading}
             >
               <option value="">Any Category</option>
               {getCasteCategories().map(category => (
@@ -278,6 +425,7 @@ export default function FilterSidebar({ onSearch }) {
               value={filters.caste}
               onChange={change}
               className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              disabled={loading}
             >
               <option value="">Any Caste</option>
               {getCastes().map(caste => (
@@ -298,6 +446,7 @@ export default function FilterSidebar({ onSearch }) {
               onChange={change}
               placeholder="Enter sub-caste"
               className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              disabled={loading}
             />
           </div>
         )}
@@ -310,6 +459,7 @@ export default function FilterSidebar({ onSearch }) {
             value={filters.maritalStatus}
             onChange={change}
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            disabled={loading}
           >
             <option value="">Any Status</option>
             {maritalStatusOptions.map(status => (
@@ -327,6 +477,7 @@ export default function FilterSidebar({ onSearch }) {
               value={filters.heightFrom}
               onChange={change}
               className="w-1/2 border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              disabled={loading}
             >
               <option value="">Min Height</option>
               {heightOptions.map(height => (
@@ -338,6 +489,7 @@ export default function FilterSidebar({ onSearch }) {
               value={filters.heightTo}
               onChange={change}
               className="w-1/2 border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              disabled={loading}
             >
               <option value="">Max Height</option>
               {heightOptions.map(height => (
@@ -355,6 +507,7 @@ export default function FilterSidebar({ onSearch }) {
             value={filters.familyStatus}
             onChange={change}
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            disabled={loading}
           >
             <option value="">Any Status</option>
             <option value="Middle Class">Middle Class</option>
@@ -371,6 +524,7 @@ export default function FilterSidebar({ onSearch }) {
             value={filters.familyType}
             onChange={change}
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            disabled={loading}
           >
             <option value="">Any Type</option>
             <option value="Joint">Joint Family</option>
@@ -388,6 +542,7 @@ export default function FilterSidebar({ onSearch }) {
             onChange={change}
             placeholder="Eg: B.Tech, MBA, Doctor"
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            disabled={loading}
           />
         </div>
 
@@ -401,6 +556,7 @@ export default function FilterSidebar({ onSearch }) {
             onChange={change}
             placeholder="Eg: Software Engineer, Doctor, Business"
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            disabled={loading}
           />
         </div>
 
@@ -415,6 +571,7 @@ export default function FilterSidebar({ onSearch }) {
               onChange={change}
               placeholder="From"
               className="w-1/2 border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              disabled={loading}
             />
             <input
               type="number"
@@ -423,6 +580,7 @@ export default function FilterSidebar({ onSearch }) {
               onChange={change}
               placeholder="To"
               className="w-1/2 border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              disabled={loading}
             />
           </div>
         </div>
@@ -437,6 +595,7 @@ export default function FilterSidebar({ onSearch }) {
             onChange={change}
             placeholder="City / District / State"
             className="w-full border rounded-lg p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+            disabled={loading}
           />
         </div>
 
@@ -444,9 +603,19 @@ export default function FilterSidebar({ onSearch }) {
         <button
           onClick={apply}
           disabled={loading}
-          className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition disabled:opacity-50 font-semibold"
+          className="w-full bg-red-600 text-white py-3 rounded-lg hover:bg-red-700 transition disabled:opacity-50 font-semibold flex items-center justify-center"
         >
-          {loading ? "Searching..." : "Apply Filters & Search"}
+          {loading ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Searching...
+            </>
+          ) : (
+            "Apply Filters & Search"
+          )}
         </button>
       </div>
     </div>

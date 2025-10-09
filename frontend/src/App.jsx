@@ -12,11 +12,11 @@ import MainLayout from "./layout/MainLayout";
 import HomePage from "./pages/Home";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
-import SearchPage from "./pages/SearchPage";
+// import SearchPage from "./pages/SearchPage";
 import UpgradePage from "./pages/UpgradePage";
 import ServicesPage from "./pages/ServicesPage";
 import Contact from "./pages/Contact";
-import AdminDashboard from "./pages/AdminDashBoard";
+import AdminDashboard from "./components/admin/AdminDashBoard";
 
 import "./index.css";
 
@@ -62,14 +62,14 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
 
-          <Route
+          {/* <Route
             path="/search"
             element={
               <MainLayout onLogin={() => setShowLogin(true)} onRegister={() => setShowRegister(true)}>
                 <SearchPage />
               </MainLayout>
             }
-          />
+          /> */}
 
           <Route
             path="/upgrade"

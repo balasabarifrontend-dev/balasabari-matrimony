@@ -3,7 +3,6 @@
 // Navbar links
 export const navLinks = [
   { path: "/", label: "Home" },
-  // { path: "/search", label: "Search" },
   { path: "/services", label: "Services" },
   { path: "/upgrade", label: "Upgrade" },
   { path: "/contact", label: "Contact Us" },
@@ -15,7 +14,6 @@ export const footerLinks = {
     { path: "/", label: "Home" },
     { path: "/register", label: "Register" },
     { path: "/login", label: "Login" },
-    // { path: "/search", label: "Search" },
     { path: "/contact", label: "Contact Us" },
   ],
   services: [

@@ -23,13 +23,18 @@ api.interceptors.request.use(
 );
 
 // Optional: Add a response interceptor to handle errors globally
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // handle unauthorized globally
-      console.log("Unauthorized! Redirect to login.");
-      // you could also redirect: window.location.href = "/login";
+      // Token is invalid or expired
+      console.log("Unauthorized! Redirecting to login...");
+      localStorage.removeItem("token");
+      // Only redirect if not already on login page
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }
