@@ -378,6 +378,14 @@ public class ProfileService {
         return true;
     }
 
+    public void updateProfileImage(Long profileId, String imageUrl) {
+    Profile profile = profileRepository.findById(profileId)
+        .orElseThrow(() -> new RuntimeException("Profile not found with id: " + profileId));
+    
+    profile.setProfileImage(imageUrl);
+    profileRepository.save(profile);
+}
+
     public ProfileDto mapToDto(Profile profile) {
         ProfileDto dto = new ProfileDto(
                 profile.getId(),

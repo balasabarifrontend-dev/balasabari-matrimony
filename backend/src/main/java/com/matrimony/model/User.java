@@ -1,7 +1,6 @@
 package com.matrimony.model;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -33,7 +32,20 @@ public class User {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // FIX: Make dob nullable since it might not be provided during registration
+    @Column(nullable = true) // CHANGED from default (not null) to nullable = true
     private LocalDate dob;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "gender", nullable = false)
+    private Gender gender;
+
+    @Column(name = "phone")
+    private String phone;
+    
+    public enum Gender {
+        Male, Female
+    }
 
     public enum Role { USER, ADMIN }
     public enum Status { ACTIVE, INACTIVE }
@@ -58,6 +70,15 @@ public class User {
         this.password = password;
     }
 
+    // Add constructor with dob
+    public User(String name, String email, String mobile, String password, LocalDate dob) {
+        this.name = name;
+        this.email = email;
+        this.mobile = mobile;
+        this.password = password;
+        this.dob = dob;
+    }
+
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -79,4 +100,8 @@ public class User {
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
     public LocalDate getDob() { return dob; }
     public void setDob(LocalDate dob) { this.dob = dob; }
+    public Gender getGender() { return gender; }
+    public void setGender(Gender gender) { this.gender = gender; }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 }

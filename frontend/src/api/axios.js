@@ -1,42 +1,52 @@
-// src/api/axios.js
+// api/axios.js
 import axios from "axios";
 
-// Create a single Axios instance
+// Base API instance
 const api = axios.create({
-  baseURL: "http://localhost:8080/api", // your backend base URL
+  baseURL: "http://localhost:8080/api",
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true, // if you use cookies
 });
 
-// Optional: Add a request interceptor to attach token
+// Attach token automatically - FIXED VERSION
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token"); // get JWT token from localStorage
-    if (token && config.headers) {
+    const token = localStorage.getItem("token");
+    console.log("🔧 Axios Interceptor - Token:", token); // Debug log
+    if (token) {
       config.headers["Authorization"] = `Bearer ${token}`;
+      console.log("🔧 Axios Interceptor - Headers:", config.headers); // Debug log
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error("🔧 Axios Interceptor - Request Error:", error);
+    return Promise.reject(error);
+  }
 );
 
-// Optional: Add a response interceptor to handle errors globally
-
+// Global error handler
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log("🔧 Axios Interceptor - Response Success:", response.status);
+    return response;
+  },
   (error) => {
-    if (error.response?.status === 401) {
-      // Token is invalid or expired
-      console.log("Unauthorized! Redirecting to login...");
+    console.error("🔧 Axios Interceptor - Response Error:", error.response?.status, error.response?.data);
+    
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      console.log("🛑 Authentication error - clearing tokens");
       localStorage.removeItem("token");
-      // Only redirect if not already on login page
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = "/login";
-      }
+      localStorage.removeItem("user");
+      // Optional: redirect to login
+      window.location.href = '/';
     }
-    return Promise.reject(error);
+    
+    if (!error.response) {
+      return Promise.reject({ error: "NETWORK_ERROR", message: "Cannot connect to server" });
+    }
+    return Promise.reject(error.response.data || error);
   }
 );
 

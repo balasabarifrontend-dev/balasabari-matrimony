@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import axios from "../../api/axios";
+import api from "../../api/axios";
 import ProfileCard from "./ProfileCard";
+import { useNavigate } from "react-router-dom";
 
 export default function ProfilesGrid() {
   const [profiles, setProfiles] = useState([]);
@@ -8,53 +9,62 @@ export default function ProfilesGrid() {
   const [religionFilter, setReligionFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
-    setLoading(true);
-    axios
-      .get("/profiles") // Remove the base URL since axios already has it
-      .then((response) => {
-        console.log("API response:", response.data);
+    const fetchProfiles = async () => {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      console.log("Token in localStorage:", token);
+
+      try {
+        console.log("🔄 Making API request to /profiles...");
         
-        // Handle paginated response structure
+        const response = await api.get("/profiles");
+        console.log("✅ FULL API response:", response);
+        
         const data = response.data;
         
+        // Handle different response structures
+        let profilesData = [];
         if (data.profiles && Array.isArray(data.profiles)) {
-          // Backend returns { profiles: [], currentPage: 0, ... }
-          setProfiles(data.profiles);
+          profilesData = data.profiles;
         } else if (Array.isArray(data)) {
-          // If it's directly an array (fallback)
-          setProfiles(data);
+          profilesData = data;
         } else if (data.content && Array.isArray(data.content)) {
-          // Alternative pagination structure
-          setProfiles(data.content);
+          profilesData = data.content;
         } else {
-          console.warn("Unexpected response format:", data);
-          setProfiles([]);
+          console.log("❌ No profiles found in response structure:", data);
+          profilesData = [];
         }
-        
+
+        console.log("📊 Profiles to set:", profilesData);
+        setProfiles(profilesData);
         setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching profiles:", error);
+      } catch (err) {
+        console.error("❌ Error fetching profiles:", err);
         setError("Failed to load profiles");
         setLoading(false);
-      });
+      }
+    };
+
+    fetchProfiles();
   }, []);
 
   const filteredProfiles = profiles.filter((p) => {
+    if (!p || typeof p !== 'object') return false;
+    
     const genderMatch =
-      filter === "all"
-        ? true
-        : filter === "brides"
-        ? p.gender === "Female"
-        : p.gender === "Male";
-
-    const religionMatch =
-      religionFilter === "all" ? true : p.religion === religionFilter;
-
+      filter === "all" ? true : 
+      filter === "brides" ? p.gender === "Female" : 
+      p.gender === "Male";
+      
+    const religionMatch = religionFilter === "all" ? true : p.religion === religionFilter;
+    
     return genderMatch && religionMatch;
   });
+
+  console.log("🎯 Filtered profiles count:", filteredProfiles.length);
 
   if (loading) {
     return (
@@ -67,16 +77,25 @@ export default function ProfilesGrid() {
     );
   }
 
-  if (error) {
+  if (error && profiles.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-600">{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-        >
-          Retry
-        </button>
+        <p className="text-red-600 text-lg mb-4">{error}</p>
+        <div className="space-y-4">
+          <p className="text-gray-600">Please log in to view profiles</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 mr-2"
+          >
+            Retry
+          </button>
+          <button
+            onClick={() => navigate('/login')}
+            className="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          >
+            Log In
+          </button>
+        </div>
       </div>
     );
   }
@@ -84,10 +103,6 @@ export default function ProfilesGrid() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
-        <h3 className="text-3xl font-bold mb-6 text-red-600">
-          Tamil Brides & Grooms
-        </h3>
-
         {/* Religion Filter */}
         <div className="flex gap-3 mb-4 flex-wrap">
           {["all", "Hindu", "Muslim", "Christian"].map((rel) => (
@@ -107,41 +122,27 @@ export default function ProfilesGrid() {
 
         {/* Gender Filter */}
         <div className="flex gap-3 mb-6 flex-wrap">
-          <button
-            onClick={() => setFilter("brides")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-              filter === "brides"
-                ? "bg-red-600 text-white shadow"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Brides
-          </button>
-          <button
-            onClick={() => setFilter("grooms")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-              filter === "grooms"
-                ? "bg-red-600 text-white shadow"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Grooms
-          </button>
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition ${
-              filter === "all"
-                ? "bg-red-600 text-white shadow"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            All Profiles
-          </button>
+          {["brides", "grooms", "all"].map((g) => (
+            <button
+              key={g}
+              onClick={() => setFilter(g)}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition ${
+                filter === g
+                  ? "bg-red-600 text-white shadow"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              {g.charAt(0).toUpperCase() + g.slice(1)}
+            </button>
+          ))}
         </div>
 
-        {!Array.isArray(filteredProfiles) || filteredProfiles.length === 0 ? (
+        {filteredProfiles.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No profiles found matching your criteria.</p>
+            <p className="text-gray-500 text-lg mb-4">No profiles found matching your criteria.</p>
+            {!localStorage.getItem("token") && (
+              <p className="text-red-600">Please log in to view all available profiles.</p>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

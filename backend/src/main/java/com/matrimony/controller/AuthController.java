@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -32,51 +33,106 @@ public class AuthController {
 
     // --- Register ---
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody UserDto userDto) {
-        logger.info("=== REGISTRATION REQUEST RECEIVED ===");
-        logger.info("UserDto received - Email: {}, Mobile: {}, Name: {}", 
-            userDto.getEmail(), userDto.getMobile(), userDto.getName());
-        
-        try {
-            // Validate required fields explicitly
-            if (userDto.getEmail() == null || userDto.getEmail().trim().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("error", "Email is required"));
-            }
-            if (userDto.getMobile() == null || userDto.getMobile().trim().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("error", "Mobile number is required"));
-            }
-            if (userDto.getPassword() == null || userDto.getPassword().trim().isEmpty()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(Map.of("error", "Password is required"));
-            }
-
-            UserDto savedUser = userService.register(userDto);
-            logger.info("=== REGISTRATION SUCCESSFUL ===");
-            logger.info("User registered successfully with ID: {}", savedUser.getId());
-            
-            // Generate token for auto-login after registration
-            String token = jwtUtil.generateToken(savedUser.getEmail());
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("user", savedUser);
-            response.put("token", token);
-            response.put("message", "Registration successful");
-            
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-            
-        } catch (Exception e) {
-            logger.error("=== REGISTRATION ERROR ===", e);
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Registration failed");
-            errorResponse.put("message", e.getMessage());
-            
-            // Use more appropriate status codes based on error type
-            HttpStatus status = determineHttpStatus(e);
-            return ResponseEntity.status(status).body(errorResponse);
+public ResponseEntity<?> register(@Valid @RequestBody UserDto userDto) {
+    logger.info("=== REGISTRATION REQUEST RECEIVED ===");
+    logger.info("UserDto received - Email: {}, Mobile: {}, Name: {}", 
+        userDto.getEmail(), userDto.getMobile(), userDto.getName());
+    
+    // ✅ IMPROVED DOB LOGGING
+    logger.info("DOB in UserDto: {} (type: {})", 
+        userDto.getDob(), 
+        (userDto.getDob() != null ? userDto.getDob().getClass().getSimpleName() : "null"));
+    
+    // ✅ Log complete UserDto with toString
+    logger.info("Complete UserDto: {}", userDto.toString());
+    
+    try {
+        // Validate required fields explicitly
+        if (userDto.getEmail() == null || userDto.getEmail().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Email is required"));
         }
+        if (userDto.getMobile() == null || userDto.getMobile().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Mobile number is required"));
+        }
+        if (userDto.getPassword() == null || userDto.getPassword().trim().isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Password is required"));
+        }
+
+        UserDto savedUser = userService.register(userDto);
+        logger.info("=== REGISTRATION SUCCESSFUL ===");
+        logger.info("User registered successfully with ID: {}", savedUser.getId());
+        
+        // Generate token for auto-login after registration
+        String token = jwtUtil.generateToken(savedUser.getEmail());
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("user", savedUser);
+        response.put("token", token);
+        response.put("message", "Registration successful");
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        
+    } catch (Exception e) {
+        logger.error("=== REGISTRATION ERROR ===", e);
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", "Registration failed");
+        errorResponse.put("message", e.getMessage());
+        
+        // Use more appropriate status codes based on error type
+        HttpStatus status = determineHttpStatus(e);
+        return ResponseEntity.status(status).body(errorResponse);
     }
+}
+
+@PostMapping("/register-debug")
+public ResponseEntity<?> registerDebug(@RequestBody Map<String, Object> request) {
+    logger.info("=== DEBUG REGISTRATION ENDPOINT ===");
+    logger.info("Raw request body: {}", request);
+    
+    try {
+        // Extract and log all fields
+        String name = (String) request.get("name");
+        String email = (String) request.get("email");
+        String mobile = (String) request.get("mobile");
+        String password = (String) request.get("password");
+        String profileFor = (String) request.get("profileFor");
+        String gender = (String) request.get("gender");
+        Object dobObj = request.get("dob");
+        
+        logger.info("Parsed fields:");
+        logger.info("  - Name: {}", name);
+        logger.info("  - Email: {}", email);
+        logger.info("  - Mobile: {}", mobile);
+        logger.info("  - Password: {}", password != null ? "[PROTECTED]" : "null");
+        logger.info("  - ProfileFor: {}", profileFor);
+        logger.info("  - Gender: {}", gender);
+        logger.info("  - DOB raw: {} (type: {})", dobObj, dobObj != null ? dobObj.getClass().getSimpleName() : "null");
+        
+        // Try to parse DOB if it exists
+        if (dobObj != null) {
+            try {
+                LocalDate dob = LocalDate.parse(dobObj.toString());
+                logger.info("  - DOB parsed successfully: {}", dob);
+            } catch (Exception e) {
+                logger.error("  - DOB parsing failed: {}", e.getMessage());
+            }
+        }
+        
+        return ResponseEntity.ok(Map.of(
+            "status", "debug_received",
+            "received_data", request,
+            "message", "Check logs for parsed data"
+        ));
+        
+    } catch (Exception e) {
+        logger.error("Debug endpoint error", e);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "Debug failed", "message", e.getMessage()));
+    }
+}
 
     // --- Login ---
     @PostMapping("/login")

@@ -29,6 +29,7 @@ com\matrimony\controller\ServiceController.class
 com\matrimony\controller\AuthController.class
 com\matrimony\controller\SearchController.class
 com\matrimony\repository\ContactRepository.class
+com\matrimony\model\User$Gender.class
 com\matrimony\controller\AdminController.class
 com\matrimony\model\enums\MartialStatus.class
 com\matrimony\dto\ProfileDto.class
